@@ -1,0 +1,25 @@
+{
+  "name": "live-catchall",
+  "version": "0.0.1",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^0.19.2",
+    "bull": "^3.12.1",
+    "bull-arena": "^2.7.1",
+    "cheerio": "^1.0.0-rc.3",
+    "express": "^4.17.1"
+  },
+  "devDependencies": {
+    "eslint": "^6.8.0",
+    "eslint-config-standard": "^14.1.0",
+    "eslint-plugin-import": "^2.20.1",
+    "eslint-plugin-node": "^11.0.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^4.0.1"
+  },
+  "description": "LiveStreaming CatchAll for Your Storage!",
+  "repository": "https://github.com/yukimochi/Live-CatchAll",
+  "author": "YUKIMOCHI",
+  "private": false
+}
