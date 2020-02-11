@@ -1,6 +1,7 @@
 // Install Queue Base
 const childProcess = require('child_process')
 const Queue = require('bull')
+const axios = require('axios')
 
 // Install Arena Base
 const Arena = require('bull-arena')
@@ -18,6 +19,12 @@ const arena = Arena({
       hostId: 'Live-CatchAll',
       type: 'bull',
       url: process.env.REDIS_URL
+    },
+    {
+      name: 'SlackEmitter',
+      hostId: 'Live-CatchAll',
+      type: 'bull',
+      url: process.env.REDIS_URL
     }
   ]
 })
@@ -28,9 +35,12 @@ router.use('/', arena)
 // Config
 const MediaReader = new Queue('MediaReader', process.env.REDIS_URL)
 const StatusFetch = new Queue('StatusFetch', process.env.REDIS_URL)
+const SlackEmitter = new Queue('SlackEmitter', process.env.REDIS_URL)
 
 const ffmpegPath = process.env.FFMPEG_PATH || 'ffmpeg'
 const fileSaveDir = process.env.VIDEO_DIR || process.cwd()
+
+const slackHookUrl = process.env.SLACK_HOOKURL
 
 const config = require('./config.json');
 
@@ -46,6 +56,20 @@ const config = require('./config.json');
 const FETCH_FUNCTIONS = {
   Chaturbate: require('./fetch').Chaturbate
 }
+
+SlackEmitter.process('SlackEmitter', (job) => {
+  return new Promise((resolve, reject) => {
+    axios.post(slackHookUrl, {
+      text: [':tada: Starting record stream...', `${job.data.broadcaster} - \`${job.data.filename}\``, job.data.url_html].join('\n')
+    }, {
+      headers: { 'Content-type': 'application/json' }
+    }).then((res) => {
+      resolve(res)
+    }).catch((err) => {
+      reject(err)
+    })
+  })
+})
 
 StatusFetch.process('StatusFetch', (job) => {
   return new Promise((resolve, reject) => {
@@ -87,6 +111,7 @@ StatusFetch.process('StatusFetch', (job) => {
 })
 
 MediaReader.process('*', 32, (job, done) => {
+  if (slackHookUrl) SlackEmitter.add('SlackEmitter', job.data)
   job.log('Start Reading: ' + job.data.filename)
   const ffProc = childProcess.spawn(ffmpegPath, [
     '-loglevel', '24', '-i', job.data.url, '-movflags', 'faststart', '-c', 'copy', '-y', fileSaveDir + require('path').sep + job.data.filename

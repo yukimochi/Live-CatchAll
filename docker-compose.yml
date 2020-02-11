@@ -18,3 +18,4 @@ services:
     environment:
       - REDIS_URL=redis://redis:6379
       - VIDEO_DIR=/video
+#      - SLACK_HOOKURL=

@@ -19,7 +19,8 @@ async function chaturbate (username) {
                 id: metadata.hls_source.split('/')[4],
                 broadcaster: metadata.broadcaster_username,
                 filename: metadata.broadcaster_username + ' - ' + (new Date()).getTime() + '.ts',
-                url: metadata.hls_source
+                url: metadata.hls_source,
+                url_html: userInfo
               }
             }
           }
