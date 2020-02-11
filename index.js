@@ -64,7 +64,7 @@ StatusFetch.process('StatusFetch', (job) => {
         for (const user of users) {
           FETCH_FUNCTIONS[provider](user).then((request) => {
             if (request !== null) {
-              job.log(`Stream detected : ${request.broadcaster} (${provider})`)
+              job.log(`Stream detected: ${request.broadcaster} (${provider})`)
               if (previousJobs.indexOf(request.id) > -1) {
                 job.log('This stream is read in other job.')
               } else {
@@ -87,7 +87,7 @@ StatusFetch.process('StatusFetch', (job) => {
 })
 
 MediaReader.process('*', 32, (job, done) => {
-  job.log('Start Reading : ' + job.data.filename)
+  job.log('Start Reading: ' + job.data.filename)
   const ffProc = childProcess.spawn(ffmpegPath, [
     '-loglevel', '24', '-i', job.data.url, '-movflags', 'faststart', '-c', 'copy', '-y', fileSaveDir + require('path').sep + job.data.filename
   ])
@@ -99,7 +99,7 @@ MediaReader.process('*', 32, (job, done) => {
   })
   ffProc.stderr.on('close', (code) => {
     if (code === 0) {
-      done('Finished Reading : ' + job.data.filename)
+      done('Finished Reading: ' + job.data.filename)
     } else {
       done(new Error('Exit ffmpeg with error'))
     }
