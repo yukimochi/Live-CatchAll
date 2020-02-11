@@ -1,7 +1,5 @@
 // Install Queue Base
 const childProcess = require('child_process')
-const axios = require('axios')
-const cheerio = require('cheerio')
 const Queue = require('bull')
 
 // Install Arena Base
@@ -45,40 +43,44 @@ const config = require('./config.json');
   })
 })()
 
+const FETCH_FUNCTIONS = {
+  Chaturbate: require('./fetch').Chaturbate
+}
+
 StatusFetch.process('StatusFetch', (job) => {
   return new Promise((resolve, reject) => {
     MediaReader.getActive().then((value) => {
       var previousJobs = []
       value.forEach(job => {
-        previousJobs.push(job.data.url.split('/')[4])
+        previousJobs.push(job.data.id)
       })
 
       job.log('Start Fetch Stream')
       const N = job.data.Chaturbate.length
       var i = 0
       var requests = []
-      for (const user of job.data.Chaturbate) {
-        chaturbate(user).then((metadata) => {
-          if (metadata.hls_source !== '') {
-            const request = {
-              filename: metadata.broadcaster_username + ' - ' + (new Date()).getTime() + '.ts',
-              url: metadata.hls_source
+      for (const provider in config) {
+        const users = config[provider]
+        for (const user of users) {
+          FETCH_FUNCTIONS[provider](user).then((request) => {
+            if (request !== null) {
+              job.log(`Stream detected : ${request.broadcaster} (${provider})`)
+              if (previousJobs.indexOf(request.id) > -1) {
+                job.log('This stream is read in other job.')
+              } else {
+                requests.push(request)
+                MediaReader.add(`${request.broadcaster} (${provider})`, request)
+              }
             }
-            job.log('Stream detected : ' + metadata.broadcaster_username + ' (Chaturbate)')
-            if (previousJobs.indexOf(request.url.split('/')[4]) > -1) {
-              job.log('Registed yet cancelled.')
-            } else {
-              requests.push(request)
-              MediaReader.add(metadata.broadcaster_username + ' (Chaturbate)', request)
+
+            i++
+            job.progress(Math.floor(i / N * 100))
+            if (i === N) {
+              job.log('Finitshed Fetch Stream')
+              resolve(requests)
             }
-          }
-          i++
-          job.progress(Math.floor(i / N * 100))
-          if (i === N) {
-            job.log('Finitshed Fetch Stream')
-            resolve(requests)
-          }
-        })
+          })
+        }
       }
     })
   })
@@ -103,24 +105,3 @@ MediaReader.process('*', 32, (job, done) => {
     }
   })
 })
-
-async function chaturbate (username) {
-  var metadata
-
-  const userInfo = `https://chaturbate.com/${username}/`
-  const res = await axios.get(userInfo)
-  const $ = cheerio.load(res.data)
-  $('script').map((i, foo) => {
-    foo.children.forEach(bar => {
-      if (bar.type === 'text' && bar.data.indexOf('window.initialRoomDossier') > -1) {
-        bar.data.split('\n').forEach(prop => {
-          if (prop.indexOf('window.initialRoomDossier') > -1) {
-            const initialRoomDossier = prop.match('window.initialRoomDossier = (.*);$')[1]
-            metadata = JSON.parse(JSON.parse(initialRoomDossier))
-          }
-        })
-      }
-    })
-  })
-  return metadata
-}
