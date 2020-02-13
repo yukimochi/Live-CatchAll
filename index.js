@@ -33,8 +33,8 @@ const router = express.Router()
 router.use('/', arena)
 
 // Config
-const MediaReader = new Queue('MediaReader', process.env.REDIS_URL)
 const StatusFetch = new Queue('StatusFetch', process.env.REDIS_URL)
+const MediaReader = new Queue('MediaReader', process.env.REDIS_URL)
 const SlackEmitter = new Queue('SlackEmitter', process.env.REDIS_URL)
 
 const ffmpegPath = process.env.FFMPEG_PATH || 'ffmpeg'
@@ -64,7 +64,8 @@ SlackEmitter.process('SlackEmitter', (job) => {
     }, {
       headers: { 'Content-type': 'application/json' }
     }).then((res) => {
-      resolve(res)
+      job.progress(100)
+      resolve(`${res.status} - ${res.data}`)
     }).catch((err) => {
       reject(err)
     })
@@ -123,10 +124,6 @@ MediaReader.process('*', 32, (job, done) => {
     job.log(data.toString())
   })
   ffProc.stderr.on('close', (code) => {
-    if (code === 0) {
-      done('Finished Reading: ' + job.data.filename)
-    } else {
-      done(new Error('Exit ffmpeg with error'))
-    }
+    done(new Error('Exit ffmpeg with error'))
   })
 })
