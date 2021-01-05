@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "axios": "^0.19.2",
+    "axios": "^0.21.1",
     "bull": "^3.12.1",
     "bull-arena": "^2.7.1",
     "cheerio": "^1.0.0-rc.3",
